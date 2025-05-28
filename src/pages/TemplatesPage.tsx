@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -17,14 +16,24 @@ const TemplatesPage = () => {
   const location = useLocation();
 
   useEffect(() => {
+    let processed = false;
     if (location.state?.newTemplate) {
       const newTemplate = location.state.newTemplate as WorkoutTemplate;
-      // Avoid adding duplicates if user navigates back and forth
       if (!templates.find(t => t.id === newTemplate.id)) {
         setTemplates(prevTemplates => [newTemplate, ...prevTemplates]);
       }
+      processed = true;
+    } else if (location.state?.updatedTemplate) {
+      const updatedTemplate = location.state.updatedTemplate as WorkoutTemplate;
+      setTemplates(prevTemplates => 
+        prevTemplates.map(t => t.id === updatedTemplate.id ? updatedTemplate : t)
+      );
+      processed = true;
+    }
+
+    if (processed) {
       // Clear location state after processing
-      window.history.replaceState({}, document.title)
+      window.history.replaceState({}, document.title);
     }
   }, [location.state, templates]);
 
@@ -72,7 +81,6 @@ const TemplatesPage = () => {
                   </div>
                   <div className="flex space-x-2">
                     <Button variant="ghost" size="icon" asChild>
-                      {/* TODO: Implement edit functionality - navigate to /edit-template/:id or /new-template with state */}
                       <Link to={`/new-template`} state={{ templateToEdit: template }}>
                         <Edit className="h-4 w-4" />
                       </Link>
@@ -111,4 +119,3 @@ const TemplatesPage = () => {
 };
 
 export default TemplatesPage;
-

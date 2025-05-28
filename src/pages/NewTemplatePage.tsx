@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -26,6 +26,7 @@ const templateExerciseSchema = z.object({
 });
 
 const templateFormSchema = z.object({
+  id: z.string().optional(),
   name: z.string().min(1, "Template name is required."),
   description: z.string().optional(),
   exercises: z.array(templateExerciseSchema).min(1, "Add at least one exercise."),
@@ -35,9 +36,20 @@ type TemplateFormValues = z.infer<typeof templateFormSchema>;
 
 const NewTemplatePage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const templateToEdit = location.state?.templateToEdit as WorkoutTemplate | undefined;
+
   const form = useForm<TemplateFormValues>({
     resolver: zodResolver(templateFormSchema),
-    defaultValues: {
+    defaultValues: templateToEdit ? {
+      id: templateToEdit.id,
+      name: templateToEdit.name,
+      description: templateToEdit.description || '',
+      exercises: templateToEdit.exercises.map(ex => ({
+        exerciseId: ex.exercise.id,
+        sets: ex.sets.map(s => ({ reps: s.reps, weight: s.weight })),
+      })),
+    } : {
       name: '',
       description: '',
       exercises: [],
@@ -51,31 +63,37 @@ const NewTemplatePage = () => {
 
   function onSubmit(data: TemplateFormValues) {
     console.log("Form data:", data);
-    const newTemplate: WorkoutTemplate = {
-      id: uuidv4(),
+    const processedTemplate: WorkoutTemplate = {
+      id: templateToEdit?.id || uuidv4(),
       name: data.name,
       description: data.description,
       exercises: data.exercises.map(ex => {
         const foundExercise = EXERCISES.find(e => e.id === ex.exerciseId);
         if (!foundExercise) {
-          // This should ideally not happen if select is populated correctly
           throw new Error(`Exercise with id ${ex.exerciseId} not found`);
         }
         return {
           exercise: foundExercise,
-          sets: ex.sets.map(s => ({ ...s, completed: false })), // Add completed flag for WorkoutSet type
+          sets: ex.sets.map((s): WorkoutSet => ({
+            reps: s.reps,
+            weight: s.weight,
+            completed: false,
+          })),
         };
       }),
     };
-    console.log("New template to be saved:", newTemplate);
-    // Pass the new template to TemplatesPage via route state
-    navigate('/templates', { state: { newTemplate } });
+    console.log("Processed template to be saved:", processedTemplate);
+    if (templateToEdit) {
+      navigate('/templates', { state: { updatedTemplate: processedTemplate } });
+    } else {
+      navigate('/templates', { state: { newTemplate: processedTemplate } });
+    }
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">Create New Template</h2>
+        <h2 className="text-2xl font-semibold">{templateToEdit ? "Edit Template" : "Create New Template"}</h2>
         <Button asChild variant="outline">
           <Link to="/templates">Back to Templates</Link>
         </Button>
@@ -166,7 +184,7 @@ const NewTemplatePage = () => {
           </div>
 
           <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Saving..." : "Save Template"}
+            {form.formState.isSubmitting ? "Saving..." : (templateToEdit ? "Update Template" : "Save Template")}
           </Button>
         </form>
       </Form>
@@ -174,7 +192,6 @@ const NewTemplatePage = () => {
   );
 };
 
-// Helper component for sets field array to keep main component cleaner
 const SetsFieldArray = ({ exerciseIndex, control }: { exerciseIndex: number, control: any }) => {
   const { fields: setFields, append: appendSet, remove: removeSet } = useFieldArray({
     control,
