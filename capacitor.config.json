@@ -1,0 +1,16 @@
+
+{
+  "appId": "app.lovable.6b5162139a124089b731919dcf7061a8",
+  "appName": "Gym Tracker",
+  "webDir": "dist",
+  "server": {
+    "url": "https://6b516213-9a12-4089-b731-919dcf7061a8.lovableproject.com?forceHideBadge=true",
+    "cleartext": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    }
+  },
+  "cordova": {}
+}
