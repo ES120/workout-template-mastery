@@ -1,9 +1,9 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Plus } from 'lucide-react';
+import { Plus, Calendar, Clock } from 'lucide-react';
 import type { Workout } from '@/types';
 
 // Sample data for now
@@ -14,6 +14,27 @@ const sampleWorkouts: Workout[] = [
 
 const WorkoutsPage = () => {
   const [workouts, setWorkouts] = React.useState<Workout[]>(sampleWorkouts);
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.completedWorkout) {
+      const completedWorkout = location.state.completedWorkout as Workout;
+      if (!workouts.find(w => w.id === completedWorkout.id)) {
+        setWorkouts(prevWorkouts => [completedWorkout, ...prevWorkouts]);
+      }
+      // Clear location state after processing
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, workouts]);
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -27,22 +48,66 @@ const WorkoutsPage = () => {
       </div>
       
       {workouts.length === 0 ? (
-        <p className="text-muted-foreground text-center py-8">No workouts logged yet. Start your first one!</p>
+        <Card className="text-center py-8">
+          <CardContent>
+            <p className="text-muted-foreground">No workouts logged yet. Start your first one!</p>
+            <Button asChild className="mt-4">
+              <Link to="/new-workout">
+                <Plus className="mr-2 h-4 w-4" /> Start New Workout
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <div className="space-y-4">
           {workouts.map((workout) => (
             <Card key={workout.id}>
               <CardHeader>
-                <CardTitle>{workout.name}</CardTitle>
-                <CardDescription>
-                  {new Date(workout.date).toLocaleDateString()} - {workout.duration} mins
-                </CardDescription>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>{workout.name}</CardTitle>
+                    <CardDescription className="flex items-center space-x-4 mt-1">
+                      <span className="flex items-center">
+                        <Calendar className="h-4 w-4 mr-1" />
+                        {formatDate(workout.date)}
+                      </span>
+                      {workout.duration && (
+                        <span className="flex items-center">
+                          <Clock className="h-4 w-4 mr-1" />
+                          {workout.duration} mins
+                        </span>
+                      )}
+                    </CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  {/* Placeholder for exercises summary */}
-                  {workout.exercises.length > 0 ? `${workout.exercises.length} exercises` : "No exercises recorded."}
-                </p>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    {workout.exercises.length > 0 
+                      ? `${workout.exercises.length} exercise${workout.exercises.length !== 1 ? 's' : ''}` 
+                      : "No exercises recorded."}
+                  </p>
+                  {workout.exercises.length > 0 && (
+                    <div className="space-y-1">
+                      {workout.exercises.slice(0, 3).map((ex, index) => (
+                        <div key={index} className="text-xs text-muted-foreground">
+                          • {ex.exercise.name} ({ex.sets.length} set{ex.sets.length !== 1 ? 's' : ''})
+                        </div>
+                      ))}
+                      {workout.exercises.length > 3 && (
+                        <div className="text-xs text-muted-foreground">
+                          + {workout.exercises.length - 3} more exercise{workout.exercises.length - 3 !== 1 ? 's' : ''}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {workout.notes && (
+                    <p className="text-xs text-muted-foreground italic border-l-2 border-muted pl-2 mt-2">
+                      "{workout.notes}"
+                    </p>
+                  )}
+                </div>
               </CardContent>
             </Card>
           ))}

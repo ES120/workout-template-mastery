@@ -9,6 +9,7 @@ import Layout from "./components/Layout";
 import WorkoutsPage from "./pages/WorkoutsPage";
 import TemplatesPage from "./pages/TemplatesPage";
 import NewWorkoutPage from "./pages/NewWorkoutPage";
+import WorkoutSessionPage from "./pages/WorkoutSessionPage";
 import NewTemplatePage from "./pages/NewTemplatePage";
 import NotFound from "./pages/NotFound";
 
