@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
@@ -105,7 +104,11 @@ const WorkoutSessionPage = () => {
         }
         return {
           exercise: foundExercise,
-          sets: ex.sets,
+          sets: ex.sets.map(s => ({
+            reps: s.reps,
+            weight: s.weight,
+            completed: s.completed,
+          })) as WorkoutSet[],
           notes: ex.notes,
         };
       }),
